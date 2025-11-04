@@ -7,6 +7,8 @@ editor: visual
 
 This is an individual assignment. Turn in this assignment as an HTML or PDF file to ELMS. Make sure to include the R Markdown or Quarto file that was used to generate it. Include the GitHub link for the repository containing these files.
 
+Link to github repo: <https://github.com/danapopky/Assignment-4>
+
 ```{r}
 #| include: false 
 library(tidyverse)
@@ -38,6 +40,7 @@ con <- dbConnect(
 )
 #con
 ```
+DP NOTE: MUST PRESS ENTER IN THE CONSOLE AFTER RUNNING THIS LINE OF CODE TO CONTINUE. 
 
 We can look at the available tables in this database using `dbListTables`.
 
@@ -62,25 +65,138 @@ LIMIT 10;
 
 Next, count the number of arrests grouped by `primary_type` in 2016. Note that is a somewhat similar task as above, with some adjustments on which rows should be considered. Sort the results, i.e. list the number of arrests in a descending order.
 
+```{sql connection= con, message = FALSE}
+
+SELECT primary_type, COUNTIF(arrest) AS arrests2016
+FROM crime
+WHERE year = 2016 
+GROUP BY primary_type
+ORDER BY arrests2016 DESC
+LIMIT 10;
+
+```
+
 We can also use the `date` for grouping. Count the number of arrests grouped by hour of the day in 2016. You can extract the latter information from `date` via `EXTRACT(HOUR FROM date)`. Which time of the day is associated with the most arrests?
+
+7pm (or, 19:00) is the hour of the day most associated with the most arrests.
+
+```{sql connection= con, message = FALSE}
+
+SELECT 
+  EXTRACT(HOUR FROM date) as hour, 
+  COUNTIF(arrest) AS arrests2016
+FROM crime
+WHERE year = 2016 
+GROUP BY hour
+ORDER BY arrests2016 DESC
+LIMIT 24;
+
+```
 
 Focus only on `HOMICIDE` and count the number of arrests for this incident type, grouped by year. List the results in descending order.
 
+```{sql connection= con, message = FALSE}
+
+SELECT 
+ year, COUNTIF(arrest) AS homicides
+FROM crime
+WHERE primary_type = 'HOMICIDE'
+GROUP BY year 
+ORDER BY homicides DESC
+LIMIT 10;
+
+```
+
 Find out which districts have the highest numbers of arrests in 2015 and 2016. That is, count the number of arrests in 2015 and 2016, grouped by year and district. List the results in descending order.
+
+```{sql connection= con, message = FALSE}
+
+SELECT 
+ year, district, COUNTIF(arrest) AS arrests
+FROM crime
+WHERE year IN (2015, 2016)
+GROUP BY year, district 
+ORDER BY arrests DESC
+LIMIT 10;
+
+```
 
 Lets switch to writing queries from within R via the `DBI` package. Create a query object that counts the number of arrests grouped by `primary_type` of district 11 in year 2016. The results should be displayed in descending order.
 
 Execute the query.
 
+```{r}
+
+sql <-   "SELECT primary_type, COUNTIF(arrest) AS arrests
+  FROM crime
+  WHERE year = 2016 AND district = 11
+  GROUP BY primary_type
+  ORDER BY arrests DESC"
+
+dbGetQuery(con, sql)
+
+```
+
 Try to write the very same query, now using the `dbplyr` package. For this, you need to first map the `crime` table to a tibble object in R.
+
+```{r}
+
+crime_table <- tbl(con, "crime")
+str(crime_table )
+class(crime_table )
+
+```
 
 Again, count the number of arrests grouped by `primary_type` of district 11 in year 2016, now using `dplyr` syntax.
 
+```{r}
+
+crime_table %>%
+  select(primary_type, arrest, district, year) %>%
+  filter(year == 2016, district == 11) %>%
+  group_by(primary_type) %>%
+  summarise(arrests = sum(as.integer(arrest), na.rm = TRUE)) %>%  
+  arrange(desc(arrests)) %>%
+  head(10)
+
+```
+
 Count the number of arrests grouped by `primary_type` and `year`, still only for district 11. Arrange the result by `year`.
+
+```{r}
+
+crime_table %>%
+  select(primary_type, arrest, district, year) %>%
+  filter(district == 11) %>%
+  group_by(year, primary_type) %>%
+  summarise(arrests = sum(as.integer(arrest), na.rm = TRUE)) %>%  
+  arrange(desc(year), desc(arrests)) %>%
+  head(50)
+
+```
 
 Assign the results of the query above to a local R object.
 
+```{r}
+
+sql_data <- 
+crime_table %>%
+  select(primary_type, arrest, district, year) %>%
+  filter(district == 11) %>%
+  group_by(year, primary_type) %>%
+  summarise(arrests = sum(as.integer(arrest), na.rm = TRUE)) %>%  
+  arrange(desc(year), desc(arrests)) %>%
+  head(50)
+
+```
+
 Confirm that you pulled the data to the local environment by displaying the first ten rows of the saved data set.
+
+```{r}
+
+head(sql_data) 
+
+```
 
 Close the connection.
 
