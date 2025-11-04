@@ -95,6 +95,8 @@ LIMIT 24;
 
 Focus only on `HOMICIDE` and count the number of arrests for this incident type, grouped by year. List the results in descending order.
 
+2001 had the highest number of homicides (431), followed by 2002 (428), 2003 (286), and 2020 (356). 
+
 ```{sql connection= con, message = FALSE}
 
 SELECT 
@@ -108,6 +110,8 @@ LIMIT 10;
 ```
 
 Find out which districts have the highest numbers of arrests in 2015 and 2016. That is, count the number of arrests in 2015 and 2016, grouped by year and district. List the results in descending order.
+
+District 11 had the highest number of arrests in both 2015 (8975) and 2016 (6578). 
 
 ```{sql connection= con, message = FALSE}
 
@@ -124,6 +128,8 @@ LIMIT 10;
 Lets switch to writing queries from within R via the `DBI` package. Create a query object that counts the number of arrests grouped by `primary_type` of district 11 in year 2016. The results should be displayed in descending order.
 
 Execute the query.
+
+In 2016, the most common arrest type by far was narcotics, with 3634 arrests. Battery (635 arrests) and Prostitution (511) were the 2nd and 3rd most common, respectively. 
 
 ```{r}
 
